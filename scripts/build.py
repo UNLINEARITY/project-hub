@@ -51,6 +51,7 @@ def shell(language, title, description, body, project=None, page='index'):
     brand_image = '<img src="assets/app-icon.png" alt="" width="36" height="36">' if project else ''
     brand_href = filename('index', language)
     alternate = ''.join(f'<link rel="alternate" hreflang="{lang}" href="{filename(page, lang)}">' for lang in LANGUAGES)
+    main_class = 'document product-overview' if project and page == 'index' else ('document' if project else 'directory')
     return f'''<!doctype html>
 <html lang="{language}">
 <head>
@@ -65,7 +66,7 @@ def shell(language, title, description, body, project=None, page='index'):
 <a class="skip" href="#main">{w['skip']}</a>
 <header class="bar"><a class="brand" href="{brand_href}">{brand_image}{brand}</a>
 <nav aria-label="{w['navigation']}">{links}</nav></header>
-<main id="main" class="{'document' if project else 'directory'}">{body}</main>
+<main id="main" class="{main_class}">{body}</main>
 <footer id="contact"><div><h2>{w['contact']}</h2><a class="email" href="mailto:unlinearity@gmail.com">unlinearity@gmail.com</a></div>
 <div class="footer-controls"><label class="theme" hidden>{w['appearance']}
 <select aria-label="{w['appearance']}"><option value="system">{w['system']}</option><option value="light">{w['light']}</option><option value="dark">{w['dark']}</option></select></label>
