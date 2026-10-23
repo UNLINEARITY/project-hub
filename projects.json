@@ -1,0 +1,16 @@
+[
+  {
+    "slug": "event-horizon",
+    "name": "Event Horizon Timer",
+    "category": "macOS",
+    "platform": "macOS 26+",
+    "summary": {
+      "en": "A quiet focus timer. When work ends, a black hole bends your desktop and prompts a break.",
+      "zh-Hans": "安静工作，按时休息。专注结束后，黑洞弯曲桌面，提醒你停下来。"
+    },
+    "status": {
+      "en": "Preparing for the Mac App Store",
+      "zh-Hans": "正在准备 Mac App Store 首发"
+    }
+  }
+]
