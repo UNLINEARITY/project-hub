@@ -2,6 +2,7 @@ import functools
 import hashlib
 import http.server
 import json
+from html.parser import HTMLParser
 import shutil
 import subprocess
 import sys
@@ -11,6 +12,16 @@ import unittest
 from pathlib import Path
 
 SOURCE = Path(__file__).resolve().parents[1]
+
+
+class Elements(HTMLParser):
+    def __init__(self, path):
+        super().__init__()
+        self.items = []
+        self.feed(path.read_text())
+
+    def handle_starttag(self, tag, attrs):
+        self.items.append((tag, dict(attrs)))
 
 
 class QuietHandler(http.server.SimpleHTTPRequestHandler):
@@ -82,6 +93,54 @@ class WebsiteTests(unittest.TestCase):
         page = self.site / 'event-horizon' / 'privacy-zh-hans.html'
         page.write_text(page.read_text().replace('lang="zh-Hans"', 'lang="en"', 1))
         self.assertIn('language does not match route', self.run_script('check.py', succeeds=False))
+
+    def test_language_routes_are_specific_to_each_product(self):
+        for folder, languages in [('', {'en', 'zh-Hans'}), ('event-horizon', {'en', 'zh-Hans'}),
+                                  ('picliva', {'en', 'zh-Hans', 'ja'})]:
+            pages = ('index',) if not folder else ('index', 'support', 'privacy')
+            for page in pages:
+                elements = Elements(self.site / folder / f'{page}.html').items
+                alternates = {a['hreflang'] for tag, a in elements if tag == 'link' and a.get('rel') == 'alternate'}
+                self.assertEqual(alternates, languages)
+        self.assertFalse((self.site / 'index-ja.html').exists())
+        self.assertFalse((self.site / 'event-horizon' / 'index-ja.html').exists())
+        self.run_script('check.py')
+
+    def test_picliva_switches_language_within_the_same_page(self):
+        suffixes = {'en': '', 'zh-Hans': '-zh-hans', 'ja': '-ja'}
+        for page in ('index', 'support', 'privacy'):
+            for suffix in suffixes.values():
+                path = self.site / 'picliva' / f'{page}{suffix}.html'
+                links = {a['hreflang']: a['href'] for tag, a in Elements(path).items
+                         if tag == 'a' and 'hreflang' in a}
+                self.assertEqual(links, {language: f'{page}{ending}.html' for language, ending in suffixes.items()})
+                if suffix == '-ja':
+                    data = path.read_text()
+                    self.assertIn('href="../index.html"', data)
+                    self.assertIn('アプリ一覧（English）', data)
+                    self.assertNotIn('../index-ja.html', data)
+
+    def test_catalog_preserves_product_order_across_platforms(self):
+        manifest = self.root / 'projects.json'
+        projects = json.loads(manifest.read_text())
+        third = dict(projects[0], slug='another-mac-app', name='Another Mac App')
+        shutil.copytree(self.root / 'projects' / projects[0]['slug'], self.root / 'projects' / third['slug'])
+        projects.append(third)
+        manifest.write_text(json.dumps(projects))
+        self.run_script('build.py')
+        for suffix in ('', '-zh-hans'):
+            items = Elements(self.site / f'index{suffix}.html').items
+            articles = [a['id'] for tag, a in items if tag == 'article']
+            self.assertEqual(articles, ['app-' + project['slug'] for project in projects])
+            japanese = [a['href'] for tag, a in items if tag == 'a' and a.get('hreflang') == 'ja']
+            self.assertEqual(japanese, ['picliva/index-ja.html'])
+
+    def test_unknown_project_language_is_rejected(self):
+        manifest = self.root / 'projects.json'
+        projects = json.loads(manifest.read_text())
+        projects[0]['languages'] = ['en', 'unknown']
+        manifest.write_text(json.dumps(projects))
+        self.assertIn('Invalid project languages', self.run_script('build.py', succeeds=False))
 
     def serve_and_verify(self, change_content):
         parent = Path(self.temporary.name) / 'served'

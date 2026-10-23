@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate generated pages, relative links, fragments, and bilingual routes."""
+"""Validate generated pages, links, and each project's language routes."""
 import json
 from html.parser import HTMLParser
 from pathlib import Path
@@ -48,10 +48,14 @@ def main():
     projects = json.loads((ROOT / 'projects.json').read_text())
     paths = sorted(SITE.rglob('*.html'))
     names = ('index', 'support', 'privacy')
+    suffixes = {'en': '', 'zh-Hans': '-zh-hans', 'ja': '-ja'}
+    languages_by_folder = {SITE.resolve(): ('en', 'zh-Hans')}
     expected = {SITE / 'index.html', SITE / 'index-zh-hans.html'}
     for project in projects:
-        expected.update(SITE / project['slug'] / f'{name}{suffix}.html'
-                        for name in names for suffix in ('', '-zh-hans'))
+        languages = project.get('languages', ('en', 'zh-Hans'))
+        languages_by_folder[(SITE / project['slug']).resolve()] = languages
+        expected.update(SITE / project['slug'] / f'{name}{suffixes[language]}.html'
+                        for name in names for language in languages)
     assert set(paths) == expected, 'Unexpected or missing generated pages.'
     allowed = {'.html', '.css', '.js', '.svg', '.png', '.jpg', '.jpeg', '.webp', '.avif', '.ico', '.woff', '.woff2'}
     for asset in SITE.rglob('*'):
@@ -64,14 +68,15 @@ def main():
     pages = {path.resolve(): Page(path) for path in paths}
     checked = 0
     for path, page in pages.items():
-        assert page.languages in (['en'], ['zh-Hans']), f'{path}: invalid language'
+        languages = languages_by_folder[path.parent]
+        assert len(page.languages) == 1 and page.languages[0] in languages, f'{path}: invalid language'
         assert page.h1s == 1, f'{path}: expected one main heading'
         assert page.has_description, f'{path}: missing description'
-        assert set(page.alternates) == {'en', 'zh-Hans'}, f'{path}: missing language route'
-        stem = path.stem.removesuffix('-zh-hans')
-        for language, suffix in (('en', ''), ('zh-Hans', '-zh-hans')):
-            assert page.alternates[language] == f'{stem}{suffix}.html', f'{path}: wrong language destination'
-        expected_language = 'zh-Hans' if path.stem.endswith('-zh-hans') else 'en'
+        assert set(page.alternates) == set(languages), f'{path}: missing language route'
+        stem = path.stem.removesuffix('-zh-hans').removesuffix('-ja')
+        for language in languages:
+            assert page.alternates[language] == f'{stem}{suffixes[language]}.html', f'{path}: wrong language destination'
+        expected_language = next((language for language, suffix in suffixes.items() if suffix and path.stem.endswith(suffix)), 'en')
         assert page.languages == [expected_language], f'{path}: language does not match route'
         for link in page.links:
             url = urlsplit(link)
@@ -85,7 +90,7 @@ def main():
             if url.fragment:
                 assert target in pages and url.fragment in pages[target].ids, f'{path}: broken fragment {link}'
             checked += 1
-    print(f'PASS: {len(pages)} bilingual pages, {checked} local links/assets, headings, and language routes.')
+    print(f'PASS: {len(pages)} multilingual pages, {checked} local links/assets, headings, and language routes.')
 
 
 if __name__ == '__main__':

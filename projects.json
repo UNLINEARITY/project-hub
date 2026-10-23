@@ -11,6 +11,73 @@
     "status": {
       "en": "Preparing for the Mac App Store",
       "zh-Hans": "正在准备 Mac App Store 首发"
-    }
+    },
+    "preview": {
+      "layout": "desktop",
+      "en": [
+        {
+          "src": "assets/screenshots/en/03-gargantua.webp",
+          "width": 2880,
+          "height": 1800
+        }
+      ],
+      "zh-Hans": [
+        {
+          "src": "assets/screenshots/zh-hans/03-gargantua.webp",
+          "width": 2880,
+          "height": 1800
+        }
+      ]
+    },
+    "languages": [
+      "en",
+      "zh-Hans"
+    ]
+  },
+  {
+    "slug": "picliva",
+    "name": "Picliva",
+    "category": "iOS",
+    "platform": "iPhone · iOS 17+",
+    "summary": {
+      "en": "Bring photos and Live Photos together, then make room in your library. Compositions stay on your iPhone.",
+      "zh-Hans": "把照片与实况照片拼在一起，也为图库腾出空间。拼接在你的 iPhone 上完成。"
+    },
+    "status": {
+      "en": "Free with optional one-time Pro",
+      "zh-Hans": "免费使用，可选一次性 Pro 购买"
+    },
+    "preview": {
+      "layout": "phones",
+      "en": [
+        {
+          "src": "assets/screenshots/en/02-composition.webp",
+          "width": 1206,
+          "height": 2622
+        },
+        {
+          "src": "assets/screenshots/en/04-library.webp",
+          "width": 1206,
+          "height": 2622
+        }
+      ],
+      "zh-Hans": [
+        {
+          "src": "assets/screenshots/zh-hans/02-composition.webp",
+          "width": 1206,
+          "height": 2622
+        },
+        {
+          "src": "assets/screenshots/zh-hans/04-library.webp",
+          "width": 1206,
+          "height": 2622
+        }
+      ]
+    },
+    "languages": [
+      "en",
+      "zh-Hans",
+      "ja"
+    ]
   }
 ]
